@@ -443,7 +443,7 @@ def handler(job):
             node["inputs"]["noise_seed"] = int(seed)
 
     # Guidance: guidance=False replaces the CFG guider (2 passes/step) with a single-pass guider
-    guidance = job_input.get("guidance", True)
+    guidance = job_input.get("guidance", False)
     if not guidance:
         for nid, node in list(prompt.items()):
             if node.get("class_type") == "ScheduledCFGGuidance":
