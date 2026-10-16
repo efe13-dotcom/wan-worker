@@ -442,6 +442,15 @@ def handler(job):
         if node.get("class_type") == "RandomNoise":
             node["inputs"]["noise_seed"] = int(seed)
 
+    # Guidance: guidance=False replaces the CFG guider (2 passes/step) with a single-pass guider
+    guidance = job_input.get("guidance", True)
+    if not guidance:
+        for nid, node in list(prompt.items()):
+            if node.get("class_type") == "ScheduledCFGGuidance":
+                prompt[nid] = {"class_type": "BasicGuider",
+                               "inputs": {"model": node["inputs"]["model"],
+                                          "conditioning": node["inputs"]["positive"]}}
+
     # FLF2V 전용 설정
     if is_flf2v:
         # End 이미지: 노드 483
@@ -492,7 +501,10 @@ def handler(job):
         if videos[node_id]:
             path = videos[node_id][0]
             try:
-                return deliver(path, job, seed, time.time() - t_start)
+                out = deliver(path, job, seed, time.time() - t_start)
+                out["guidance"] = bool(guidance)
+                out["rev"] = os.getenv("WW_REV", "")
+                return out
             finally:
                 import shutil
                 for p in (path, task_id):
